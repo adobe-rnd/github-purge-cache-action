@@ -1,0 +1,22 @@
+{
+  "name": "github-purge-cache-action",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Clear the helix pages cache",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
+    "ferrum": "^1.7.0",
+    "phin": "^3.5.0"
+  },
+  "devDependencies": {
+    "@zeit/ncc": "^0.22.3"
+  }
+}

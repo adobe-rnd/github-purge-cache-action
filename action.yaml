@@ -1,0 +1,12 @@
+name: 'Helix-Purge-Modified'
+description: 'Pure those files from the helix cache that have been modified'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
+inputs:
+  repo-token:
+    description: Should be '$ {{ secrets.GITHUB_TOKEN }}' (remove the space); this will give the action access to your repo!
+    required: true
+  helix-url:
+    description: Base-URL of your helix instance.
+    required: false
