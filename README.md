@@ -8,7 +8,7 @@ Purges the helix pages cache on push.
 
 **Required** A github token to issue the dummy commit.
 
-### `helix_url`
+### `helix-url`
 
 **Optional** Base url of the helix pages instance. Uses
 `ref--repo--owner.hlx.page` by default.
