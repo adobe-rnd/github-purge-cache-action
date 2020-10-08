@@ -10,11 +10,16 @@ Purges the helix pages cache on push.
 
 ### `helix_url`
 
-**Optional** Base url of the helix pages instance. Uses `ref--repo--owner.hlx.page` by default.
+**Optional** Base url of the helix pages instance. Uses
+`ref--repo--owner.hlx.page` by default.
 
 ## Example usage
 
-```
+Add a yaml file with the following contents inside .github/workflows, as
+described in [github actions quick
+start](https://docs.github.com/en/free-pro-team@latest/actions/quickstart).
+
+```yaml
 on: push
 
 jobs:
@@ -37,3 +42,4 @@ Please run the build script before release to regenerate dist/index.html
 $ npm run build
 $ git commit -am "..."
 $ git push
+```
