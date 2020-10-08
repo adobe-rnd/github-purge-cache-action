@@ -31,7 +31,7 @@ jobs:
         id: trigger
         uses: adobe-rnd/github-purge-cache-action
         with:
-          repo-token: ${{ secrets.MY_GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 # Development
