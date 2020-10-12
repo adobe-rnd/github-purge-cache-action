@@ -29,7 +29,7 @@ jobs:
     steps:
       - name: Trigger
         id: trigger
-        uses: adobe-rnd/github-purge-cache-action
+        uses: adobe-rnd/github-purge-cache-action@master
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 ```
