@@ -76,13 +76,14 @@ const main = async () => {
   const agent = new https.Agent({ maxTotalSockets: 20, maxSockets: 20 });
 
   try {
+    const results = {};
     // Perform the requests
-    await Promise.all(map(files, (f) => phin({
+    results.push(...await Promise.all(map(files, (f) => phin({
       url: join_url_path(f, helix_url),
       method: 'HLXPURGE',
       core: { agent },
-    })));
-
+    }))));
+    console.log(JSON.stringify(results));
   } finally {
     agent.destroy();
   }
