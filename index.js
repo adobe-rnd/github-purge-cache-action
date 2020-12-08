@@ -14,17 +14,22 @@ const https = require('https');
 const { env } = require('process');
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { curry, pipe, filter, map, identity, obj, get, last } = require('ferrum');
+const { inspect } = require('util');
 const { entries } = Object;
 const phin = require('phin'); // http client
 const path = require('path');
+const {
+  curry, pipe, filter, map, identity,
+  obj, get, last, join, each, list, eq,
+  reject,
+} = require('ferrum');
 
 /// Like ferrum filter but applied specifically to the key of key
 /// value pairs.
 ///
 /// (* -> IntoBool) -> Sequence<[*, *]> -> Sequence<[*, *]>
 const filterKey = curry('filterKey', (seq, fn) =>
-  filter(seq, ([k, v]) => fn(k)));
+  filter(seq, ([k, _]) => fn(k)));
 
 /// Like ferrum map but transforms the key specifically from key/value pairs.
 ///
@@ -51,13 +56,37 @@ const join_url_path = curry('join_url_path', (extension, base) => {
   return `${origin}${path.join(pathname, extension)}`;
 });
 
+/// Debug logging
+const debug = (...args) => console.warn(...args);
+
+/// Report an error to the github action
+let errorBuffer = '';
+const ghReportError = (...args) => {
+  core.error(...args);
+  errorBuffer += join(map(args, inspect), ' ') + '\n';
+  core.setFailed(errorBuffer);
+};
+
+/// Log the values of variables to stdout
+const dump = (vars) =>
+  each(vars, ([k, v]) =>
+    debug(`let ${k} = `, v));
+
 const main = async () => {
-  const { before: base, after: head, compare, ref: full_ref = "master" } = github.context.payload;
+  const { before: base, after: head, compare, ref: full_ref = "master", commits } = github.context.payload;
   const { repo_token, helix_url: helix_url_param } = obj(inp());
+
+  debug("DATE", new Date());
+  dump({ base, head, full_ref, url: helix_url_param });
 
   const [_, owner, repo] = new URL(compare).pathname.split("/"); // surprisingly hard to access
   const ref = last(full_ref.split('/'));
   const helix_url = helix_url_param || `${ref}--${repo}--${owner}.hlx.page`;
+
+  dump({ owner, repo, ref, helix_url });
+
+  each(commits, ({ id, message, author, timestamp}) =>
+    debug(`COMMIT`, id, author.email, timestamp, `"${message}"`));
 
   // Sanity checks
   assert(new URL(helix_url).protocol === 'https:', 'Please use HTTPS!');
@@ -70,6 +99,12 @@ const main = async () => {
   const files = pipe(
     diff.data.files,
     map(get('filename')),
+    reject((f) => {
+      const r = f.match(/^.github\//);
+      debug(r ? 'SKIP' : 'FILE', f);
+      return r;
+    }),
+    list,
   );
 
   // Max number of connections (avoid excessive parallel requests)
@@ -77,13 +112,33 @@ const main = async () => {
 
   try {
     // Perform the requests
-    console.log(JSON.stringify(...await Promise.all(map(files, (f) => phin({
-      url: join_url_path(f, helix_url),
-      method: 'HLXPURGE',
-      core: { agent },
-    })))));
-  } catch (e) {
-    console.error(e.message);
+    await Promise.all(map(files, async (f) => {
+      const url = join_url_path(f, helix_url);
+      try {
+        const res = await phin({
+          url,
+          method: 'HLXPURGE',
+          core: { agent }
+        });
+
+        const { statusCode, statusMessage, headers } = res;
+        assert(statusCode === 200,
+          `HTTP status indicates failure: ${statusCode} ${statusMessage}`);
+
+        const { 'content-type': mime } = headers;
+        assert(mime === 'application/json',
+          `Expected JSON response, not ${mime}`);
+
+        each(JSON.parse(res.body), ({ status, url, ...rest }) => {
+          assert(status === 'ok',
+            `Clearing ${url} yielded NON-OK status: ${status} rest=${inspect(rest)}`)
+          debug(`CLEARED ${url}`, ...(eq(rest, {}) ? [] : [rest]));
+        });
+
+      } catch (e) {
+        ghReportError(`Error on HLXPURGE ${url}:`, e);
+      }
+    }));
   } finally {
     agent.destroy();
   }
@@ -93,8 +148,7 @@ const init = async () => {
   try {
     await Promise.resolve(main());
   } catch (e) {
-    console.error(e);
-    core.setFailed(e.message);
+    ghReportError(`ACTION FAILED:`, e);
   }
 }
 
