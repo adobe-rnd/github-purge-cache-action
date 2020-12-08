@@ -304,12 +304,13 @@ const main = async () => {
 
   try {
     // Perform the requests
-    await Promise.all(map(files, (f) => phin({
+    console.log(JSON.stringify(...await Promise.all(map(files, (f) => phin({
       url: join_url_path(f, helix_url),
       method: 'HLXPURGE',
       core: { agent },
-    })));
-
+    })))));
+  } catch (e) {
+    console.error(e.message);
   } finally {
     agent.destroy();
   }
