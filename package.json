@@ -14,7 +14,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "ferrum": "^1.7.0",
-    "phin": "^3.5.0"
+    "phin": "^4.0.0"
   },
   "devDependencies": {
     "@zeit/ncc": "^0.22.3"
